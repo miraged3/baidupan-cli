@@ -46,7 +46,8 @@
 - [x] 文件/目录重命名（`rename/rn`）
 - [x] 目录下批量重命名（`rename-batch`/`rb`，sed 替换模式 + 正则模式 + 进度 + 出错继续）
 - [x] 文件复制/移动/删除（`cp/copy`、`mv/move`、`rm/del/delete`）
-- [ ] 上传/下载
+- [x] 文件下载（`download/dl`）
+- [ ] 上传
 - [ ] 创建文件夹
 - [ ] 分享
 
@@ -195,6 +196,23 @@ rm "/我的文档/a.txt" "/我的文档/一个文件夹"
 ```bash
 rm -a "/我的文档/a.txt" "/我的文档/一个文件夹"
 ```
+
+### 下载（download / dl）
+
+下载单个文件到本地文件系统：
+
+```bash
+download "/我的文档/a.txt"
+download "/我的文档/a.txt" "./a.txt"
+download "/我的文档/a.txt" --output "./downloads/"
+download "/我的文档/a.txt" --output "./downloads/a.txt" --force
+```
+
+说明：
+
+- 默认保存为当前工作目录下的同名文件
+- 如果 `--output` 或位置参数 `LOCAL_PATH` 是目录，则会自动拼接远端文件名
+- 若本地已存在同名文件，需加 `--force` 才会覆盖
 
 ### 批量重命名（rename-batch / rb）
 
