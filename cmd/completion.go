@@ -109,20 +109,13 @@ func completeRemotePath(prefix string, onlyDirs bool) []string {
 		return nil
 	}
 
-	resolvedPrefix, baseDir, namePrefix := splitRemotePathForCompletion(prefix)
+	displayBase, baseDir, namePrefix := splitRemotePathForCompletion(prefix)
 	files, err := listRemoteDirCached(baseDir)
 	if err != nil {
 		return nil
 	}
 
-	out := make([]string, 0, len(files)+1)
-	if baseDir != "/" && "." != namePrefix && strings.HasPrefix(".", namePrefix) {
-		parent := pathpkg.Dir(strings.TrimRight(baseDir, "/"))
-		if parent == "." {
-			parent = "/"
-		}
-		out = append(out, formatRemoteCompletion(parent, true))
-	}
+	out := make([]string, 0, len(files))
 
 	for _, f := range files {
 		if f == nil {
@@ -134,14 +127,10 @@ func completeRemotePath(prefix string, onlyDirs bool) []string {
 		if !strings.HasPrefix(f.ServerFilename, namePrefix) {
 			continue
 		}
-		candidate := f.Path
-		if f.IsDir == 1 {
-			candidate += "/"
-		}
-		out = append(out, escapeCompletion(candidate))
+		out = append(out, buildCompletionCandidate(displayBase, f.ServerFilename, f.IsDir == 1))
 	}
 
-	if len(out) == 0 && resolvedPrefix == "/" && namePrefix == "" {
+	if len(out) == 0 && baseDir == "/" && namePrefix == "" {
 		return []string{"/"}
 	}
 
@@ -149,22 +138,34 @@ func completeRemotePath(prefix string, onlyDirs bool) []string {
 	return dedupeStrings(out)
 }
 
-func splitRemotePathForCompletion(prefix string) (resolvedPrefix, baseDir, namePrefix string) {
+func splitRemotePathForCompletion(prefix string) (displayBase, baseDir, namePrefix string) {
 	prefix = strings.TrimSpace(prefix)
 	if prefix == "" {
-		return app.CurrentDir, app.CurrentDir, ""
+		if app.CurrentDir == "/" {
+			return "/", "/", ""
+		}
+		return ensureTrailingSlash(app.CurrentDir), app.CurrentDir, ""
 	}
 
-	resolvedPrefix = ResolvePath(prefix)
+	resolvedPrefix := ResolvePath(prefix)
 	if strings.HasSuffix(prefix, "/") {
-		return resolvedPrefix, resolvedPrefix, ""
+		return prefix, resolvedPrefix, ""
 	}
 
 	baseDir = pathpkg.Dir(resolvedPrefix)
 	if baseDir == "." {
 		baseDir = "/"
 	}
-	return resolvedPrefix, baseDir, pathpkg.Base(resolvedPrefix)
+
+	displayBase = pathpkg.Dir(prefix)
+	if displayBase == "." {
+		displayBase = ""
+	} else if displayBase != "/" {
+		displayBase = ensureTrailingSlash(displayBase)
+	} else {
+		displayBase = "/"
+	}
+	return displayBase, baseDir, pathpkg.Base(prefix)
 }
 
 func listRemoteDirCached(dir string) ([]*File, error) {
@@ -233,20 +234,23 @@ func dedupeStrings(items []string) []string {
 	return out
 }
 
-func formatRemoteCompletion(path string, isDir bool) string {
-	if isDir && !strings.HasSuffix(path, "/") {
-		path += "/"
+func buildCompletionCandidate(displayBase, name string, isDir bool) string {
+	candidate := displayBase + name
+	if displayBase == "/" {
+		candidate = "/" + name
 	}
-	return escapeCompletion(path)
+	if displayBase == "" {
+		candidate = name
+	}
+	if isDir {
+		candidate = ensureTrailingSlash(candidate)
+	}
+	return candidate
 }
 
-func escapeCompletion(s string) string {
-	replacer := strings.NewReplacer(
-		` `, `\ `,
-		`\`, `\\`,
-		`"`, `\"`,
-		`'`, `\'`,
-		"\t", `\t`,
-	)
-	return replacer.Replace(s)
+func ensureTrailingSlash(s string) string {
+	if s == "" || strings.HasSuffix(s, "/") {
+		return s
+	}
+	return s + "/"
 }
