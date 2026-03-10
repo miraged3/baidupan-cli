@@ -53,6 +53,27 @@ var fileListCmd = &grumble.Command{
 		// f.StringL("ctime", "", "creation time to filter, when the creation time of the file is greater than it will be list, ONLY SUPPORTED when `recurse` is true")
 		// f.StringL("mtime", "", "update time to filter, when the modification time of the file is greater than it will be list, ONLY SUPPORTED when `recurse` is true")
 	},
+	Completer: remotePathCompleter(remotePathCompleterConfig{
+		OnlyDirs:    true,
+		Positionals: 1,
+		FlagValueMatchers: map[string]bool{
+			"-d":    true,
+			"--dir": true,
+		},
+		Flags: []string{
+			"-d", "--dir",
+			"-o", "--order",
+			"-r", "--recurse",
+			"-D", "--desc",
+			"-f", "--only-folder",
+			"-F", "--only-files",
+			"-E", "--show-empty",
+			"-l", "--limit",
+			"-v", "--verbose",
+			"-H", "--human-readable",
+			"-g", "--show-form",
+		},
+	}),
 	Run: func(ctx *grumble.Context) error {
 		if err := checkAuthorized(ctx); err != nil {
 			return err

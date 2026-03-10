@@ -47,6 +47,15 @@ var fileDownloadCmd = &grumble.Command{
 		f.Bool("f", "force", false, "overwrite local file if it already exists")
 		f.Int("t", "timeout", 0, "download timeout in seconds (0 means no timeout)")
 	},
+	Completer: remotePathCompleter(remotePathCompleterConfig{
+		OnlyDirs:    false,
+		Positionals: 1,
+		Flags: []string{
+			"-o", "--output",
+			"-f", "--force",
+			"-t", "--timeout",
+		},
+	}),
 	Run: func(ctx *grumble.Context) error {
 		if err := checkAuthorized(ctx); err != nil {
 			return err

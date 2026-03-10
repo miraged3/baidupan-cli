@@ -15,6 +15,10 @@ var cdCmd = &grumble.Command{
 	Args: func(a *grumble.Args) {
 		a.String("path", "the target directory path", grumble.Default("/"))
 	},
+	Completer: remotePathCompleter(remotePathCompleterConfig{
+		OnlyDirs:    true,
+		Positionals: 1,
+	}),
 	Run: func(ctx *grumble.Context) error {
 		if err := checkAuthorized(ctx); err != nil {
 			return err
